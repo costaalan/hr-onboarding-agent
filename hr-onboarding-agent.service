@@ -1,0 +1,15 @@
+[Unit]
+Description=HR Onboarding Agent - RAG Chatbot for RH
+After=network.target
+
+[Service]
+Type=simple
+User=hermes
+WorkingDirectory=/opt/data/hr-onboarding-agent
+EnvironmentFile=/opt/data/.env
+ExecStart=/opt/data/hr-onboarding-agent/.venv/bin/python /opt/data/hr-onboarding-agent/run.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
