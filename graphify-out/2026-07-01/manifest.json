@@ -1,0 +1,27 @@
+{
+  "app/agent.py": {
+    "mtime": 1782743738.7711322,
+    "ast_hash": "675ff71767e6a9fe019fb846750e37c8",
+    "semantic_hash": "675ff71767e6a9fe019fb846750e37c8"
+  },
+  "app/main.py": {
+    "mtime": 1782743102.3765817,
+    "ast_hash": "cdfb150cfcdecd0f43e5703fe8790771",
+    "semantic_hash": "cdfb150cfcdecd0f43e5703fe8790771"
+  },
+  "rag/generate_pdfs.py": {
+    "mtime": 1782742878.3681242,
+    "ast_hash": "097f9c8daef4304dedc3e007b6f23b03",
+    "semantic_hash": "097f9c8daef4304dedc3e007b6f23b03"
+  },
+  "rag/indexador.py": {
+    "mtime": 1782743044.623981,
+    "ast_hash": "b9501774ded5bbafcd514afdb78337f9",
+    "semantic_hash": "b9501774ded5bbafcd514afdb78337f9"
+  },
+  "run.py": {
+    "mtime": 1782744644.495531,
+    "ast_hash": "5c44e5e716ec1d7591b1800207e7bb9d",
+    "semantic_hash": "5c44e5e716ec1d7591b1800207e7bb9d"
+  }
+}

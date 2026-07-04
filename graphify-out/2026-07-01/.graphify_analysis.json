@@ -1,0 +1,252 @@
+{
+  "communities": {
+    "0": [
+      "docker_compose_hr_onboarding",
+      "frontend_index_html",
+      "readme_cloudflare_tunnel",
+      "readme_docker",
+      "readme_hr_onboarding_agent",
+      "readme_python_3_12",
+      "readme_rag",
+      "readme_tailwindcss",
+      "readme_wsgi_middleware"
+    ],
+    "1": [
+      "fpdf",
+      "rag_generate_pdfs",
+      "rag_generate_pdfs_generate_pdfs",
+      "rag_generate_pdfs_hrpdf",
+      "rag_generate_pdfs_hrpdf_body_text",
+      "rag_generate_pdfs_hrpdf_bullet",
+      "rag_generate_pdfs_hrpdf_footer",
+      "rag_generate_pdfs_hrpdf_header",
+      "rag_generate_pdfs_hrpdf_section_title"
+    ],
+    "2": [
+      "app_main",
+      "app_main_answerresponse",
+      "app_main_ask",
+      "app_main_health",
+      "app_main_questionrequest",
+      "app_main_rationale_1",
+      "basemodel",
+      "run"
+    ],
+    "3": [
+      "app_agent_hronboardingagent",
+      "app_agent_hronboardingagent_ask",
+      "app_agent_hronboardingagent_build_graph",
+      "app_agent_hronboardingagent_init",
+      "app_agent_rationale_106",
+      "app_agent_rationale_248",
+      "app_agent_rationale_84"
+    ],
+    "4": [
+      "app_agent",
+      "app_agent_call_llm",
+      "app_agent_hronboardingagent_answer_node",
+      "app_agent_rationale_1",
+      "app_agent_rationale_189",
+      "app_agent_rationale_52"
+    ],
+    "5": [
+      "rag_indexador",
+      "rag_indexador_extract_text_from_pdf",
+      "rag_indexador_index_documents",
+      "rag_indexador_rationale_1",
+      "rag_indexador_rationale_27",
+      "rag_indexador_rationale_73"
+    ],
+    "6": [
+      "app_agent_agentstate",
+      "app_agent_hronboardingagent_retriever_node",
+      "app_agent_hronboardingagent_route_after_classification",
+      "app_agent_rationale_159",
+      "typeddict"
+    ],
+    "7": [
+      "readme_answer_node",
+      "readme_chromadb",
+      "readme_deepseek_v3",
+      "readme_retriever_node",
+      "requirements_chromadb"
+    ],
+    "8": [
+      "app_agent_hronboardingagent_classifier_node",
+      "app_agent_rationale_132"
+    ],
+    "9": [
+      "app_agent_hronboardingagent_fallback_node",
+      "app_agent_rationale_229"
+    ],
+    "10": [
+      "readme_classifier_node",
+      "readme_fallback_node"
+    ],
+    "11": [
+      "readme_fastapi",
+      "requirements_fastapi"
+    ],
+    "12": [
+      "readme_langgraph",
+      "requirements_langgraph"
+    ],
+    "13": [
+      "readme_sentence_transformers",
+      "requirements_sentence_transformers"
+    ],
+    "14": [
+      "requirements_anthropic"
+    ],
+    "15": [
+      "requirements_pydantic"
+    ],
+    "16": [
+      "requirements_pypdf2"
+    ],
+    "17": [
+      "requirements_python_dotenv"
+    ],
+    "18": [
+      "requirements_python_multipart"
+    ],
+    "19": [
+      "requirements_uvicorn"
+    ]
+  },
+  "cohesion": {
+    "0": 0.25,
+    "1": 0.3333333333333333,
+    "2": 0.35714285714285715,
+    "3": 0.3333333333333333,
+    "4": 0.3333333333333333,
+    "5": 0.4,
+    "6": 0.4,
+    "7": 0.4,
+    "8": 1.0,
+    "9": 1.0,
+    "10": 1.0,
+    "11": 1.0,
+    "12": 1.0,
+    "13": 1.0,
+    "14": 1.0,
+    "15": 1.0,
+    "16": 1.0,
+    "17": 1.0,
+    "18": 1.0,
+    "19": 1.0
+  },
+  "gods": [
+    {
+      "id": "readme_hr_onboarding_agent",
+      "label": "HR Onboarding Agent",
+      "degree": 17
+    },
+    {
+      "id": "app_agent_hronboardingagent",
+      "label": "HROnboardingAgent",
+      "degree": 13
+    },
+    {
+      "id": "app_agent_agentstate",
+      "label": "AgentState",
+      "degree": 8
+    },
+    {
+      "id": "rag_generate_pdfs_hrpdf",
+      "label": "HRPDF",
+      "degree": 8
+    },
+    {
+      "id": "app_agent_call_llm",
+      "label": "call_llm()",
+      "degree": 5
+    },
+    {
+      "id": "app_main_questionrequest",
+      "label": "QuestionRequest",
+      "degree": 4
+    },
+    {
+      "id": "app_main_answerresponse",
+      "label": "AnswerResponse",
+      "degree": 4
+    },
+    {
+      "id": "rag_generate_pdfs_generate_pdfs",
+      "label": "generate_pdfs()",
+      "degree": 4
+    },
+    {
+      "id": "readme_retriever_node",
+      "label": "Retriever Node",
+      "degree": 4
+    },
+    {
+      "id": "app_main_ask",
+      "label": "ask()",
+      "degree": 3
+    }
+  ],
+  "surprises": [
+    {
+      "source": "HR Onboarding Service",
+      "target": "HR Onboarding Agent",
+      "source_files": [
+        "docker-compose.yml",
+        "README.md"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "references",
+      "why": "connects across different repos/directories; peripheral node `HR Onboarding Service` unexpectedly reaches hub `HR Onboarding Agent`"
+    },
+    {
+      "source": "Frontend Chat Interface",
+      "target": "HR Onboarding Agent",
+      "source_files": [
+        "frontend/index.html",
+        "README.md"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "references",
+      "why": "connects across different repos/directories; peripheral node `Frontend Chat Interface` unexpectedly reaches hub `HR Onboarding Agent`"
+    },
+    {
+      "source": "ChromaDB",
+      "target": "ChromaDB",
+      "source_files": [
+        "requirements.txt",
+        "README.md"
+      ],
+      "confidence": "INFERRED",
+      "relation": "conceptually_related_to",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories"
+    },
+    {
+      "source": "FastAPI",
+      "target": "FastAPI",
+      "source_files": [
+        "requirements.txt",
+        "README.md"
+      ],
+      "confidence": "INFERRED",
+      "relation": "conceptually_related_to",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories"
+    },
+    {
+      "source": "LangGraph",
+      "target": "LangGraph",
+      "source_files": [
+        "requirements.txt",
+        "README.md"
+      ],
+      "confidence": "INFERRED",
+      "relation": "conceptually_related_to",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories"
+    }
+  ],
+  "tokens": {
+    "input": 4700,
+    "output": 4591
+  }
+}

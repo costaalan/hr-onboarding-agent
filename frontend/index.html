@@ -174,7 +174,7 @@
         typing.classList.remove('hidden');
 
         try {
-            const response = await fetch('/ask', {
+            const response = await fetch('/hr-onboarding/ask', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ question }),
