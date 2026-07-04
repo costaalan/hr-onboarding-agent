@@ -48,24 +48,49 @@ class AgentState(TypedDict):
     source: Optional[str]
 
 
+# LLM via Hermes local
+HERMES_URL = os.environ.get("HERMES_URL", "http://localhost:9092")  # porta do Hermes local
+LOCAL_MODEL = os.environ.get("LOCAL_MODEL", "deepseek-chat")  # modelo configurado no Hermes
+# LLM via Hermes config (usa mesma chave do Hermes)
+HERMES_BASE_URL = os.environ.get("HERMES_BASE_URL", "https://api.deepseek.com/v1")
+HERMES_MODEL = os.environ.get("HERMES_MODEL", "deepseek-chat")
+HERMES_API_KEY = os.environ.get("HERMES_API_KEY", "") or os.environ.get("DEEPSEEK_API_KEY", "")
+if not HERMES_API_KEY:
+    # Tentar ler do .env
+    try:
+        for path in ["/opt/data/.env", ".env"]:
+            with open(path) as f:
+                for line in f:
+                    if "DEEPSEEK_API_KEY" in line and "=" in line and not line.strip().startswith("#"):
+                        HERMES_API_KEY = line.split("=", 1)[1].strip().strip('"').strip("'")
+                        break
+            if HERMES_API_KEY: break
+    except:
+        pass
+
+
 def call_llm(system: str, prompt: str, max_tokens: int = 300, temperature: float = 0.0) -> str:
-    """Chama DeepSeek API via HTTP."""
+    """Chama Ollama Cloud (minimax-m3) via API. Fallback para resposta padrao."""
+    ollama_key = os.environ.get("OLLAMA_API_KEY", "")
+    if not ollama_key:
+        ollama_key = "a4dab60233da462b8cb1096a33c64117.u18mgxcqGWb7YOPUi647zXvP"
+    
     headers = {
-        "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
+        "Authorization": f"Bearer {ollama_key}",
         "Content-Type": "application/json",
     }
     data = {
-        "model": DEEPSEEK_MODEL,
+        "model": "minimax-m3:cloud",
         "messages": [
             {"role": "system", "content": system},
             {"role": "user", "content": prompt},
         ],
-        "max_tokens": max_tokens,
-        "temperature": temperature,
+        "stream": False,
+        "options": {"num_predict": max_tokens},
     }
 
     req = urllib.request.Request(
-        DEEPSEEK_URL,
+        "https://api.ollama.cloud/v1/chat/completions",
         data=json.dumps(data).encode(),
         headers=headers,
         method="POST",
@@ -141,6 +166,21 @@ class HROnboardingAgent:
             print(f"[CLASSIFIER] Saudacao detectada: '{question[:40]}' -> greeting")
             return {"classification": "greeting"}
         
+        # Palavras-chave de RH - deteccao sem depender do LLM
+        rh_keywords = [
+            "ferias", "ferias", "beneficio", "beneficio", "plano de saude", "plano de saúde",
+            "vale alimentacao", "vale alimentação", "vale transporte", "codigo de conduta", "código de conduta",
+            "home office", "onboarding", "salario", "salário", "folha de pagamento", "dress code",
+            "horario", "horário", "treinamento", "treinamento", "periodo de experiencia", "período de experiência",
+            "equipamento", "ponto", "ponto eletronico", "jornada", "carga horaria", "carga horária",
+            "seguro", "previdencia", "previdência", "contrato", "admissao", "admissão",
+            "rescisao", "rescisão", "holerite", "decimo", "décimo", "13o", "13º",
+            "auxilio", "auxílio", "reembolso", "nota fiscal", "vt", "vr", "va",
+        ]
+        if any(kw in question_lower for kw in rh_keywords):
+            print(f"[CLASSIFIER] Palavra-chave RH detectada: '{question[:60]}' -> rh")
+            return {"classification": "rh"}
+        
         system = "Você classifica perguntas como 'rh' ou 'out_of_scope'. Responda apenas uma palavra."
         prompt = f"""Analise a pergunta abaixo e classifique como "rh" ou "out_of_scope".
 
@@ -213,31 +253,30 @@ Pergunta: {question}"""
 
         sources = ", ".join(sorted(sources_set))
 
-        system = "Você é um assistente de RH que responde com base em documentos da empresa. Sempre cite as fontes."
-        prompt = f'''Você é um assistente de RH amigável e prestativo chamado "Assistente de Onboarding RH".
+        system = "Você é um assistente de RH amigável e prestativo. Responda de forma natural e conversacional, como um profissional de RH."
+        prompt = f'''Você é um assistente de onboarding de RH.
 
-REGRAS IMPORTANTES:
-1. Se o usuario estiver dizendo "ola", "oi", "bom dia", ou QUALQUER cumprimento sem uma pergunta especifica, 
-   responda IMEDIATAMENTE com boas-vindas calorosas e completas para um novo funcionario.
-   Inclua: sistemas (Slack, Google Workspace, PontoTel, PipeDrive, Notion, Jira, Wellhub, Flash),
-   horario (8h diarias, 44h semanais, flexivel 7h-19h),
-   treinamentos obrigatorios nos primeiros 15 dias,
-   auxilio home office (R$ 150/mes),
-   e codigo de conduta.
+REGRAS:
+1. Se for um cumprimento (ola, oi, bom dia), seja caloroso e pergunte como pode ajudar.
+2. Para perguntas especificas sobre beneficios, ferias, home office, etc., responda com as informacoes dos documentos.
+3. NUNCA mencione nomes de arquivos PDF, documentos ou fontes tecnicas.
+4. Responda como se voce fosse uma pessoa do RH conversando naturalmente.
+5. Se nao souber a resposta, diga que vai verificar e retorna.
 
-2. Se for uma pergunta especifica sobre RH (beneficios, ferias, plano de saude, etc.),
-   use APENAS as informacoes dos documentos abaixo para responder.
-
-3. Se nao encontrar a informacao nos documentos, diga que nao encontrou e sugira contatar o RH.
-
-Documentos de referencia:
+Documentos de referencia (uso interno):
 {context_text}
 
 Pergunta do usuario: {question}'''
 
         answer = call_llm(system, prompt, max_tokens=600, temperature=0.3)
         if not answer:
-            answer = "Desculpe, nao consegui processar sua pergunta no momento. Tente novamente mais tarde."
+            # Fallback: responder com informacoes basicas baseadas nos chunks
+            fallback_info = ""
+            for ctx in contexts[:3]:
+                text = ctx['text'][:200]
+                fallback_info += text + "\n"
+            answer = f"Com base nas informações disponíveis:\n\n{fallback_info[:500]}\n\nSe precisar de mais detalhes, é só perguntar!"
+            answer = answer.strip()
 
         print(f"[ANSWER] Resposta gerada ({len(answer)} chars) - Fontes: {sources}")
         return {"answer": answer, "source": sources}
@@ -262,44 +301,13 @@ Pergunta do usuario: {question}"""
         return {"answer": answer, "source": "fora_do_escopo"}
 
     def greeting_node(self, state: AgentState):
-        """Responde com boas-vindas completas ao novo funcionario."""
-        answer = """Olá! Seja muito bem-vindo(a)! 😊 Fico feliz em ter você aqui para iniciar essa jornada conosco.
+        """Responde com boas-vindas naturais, sem jogar tudo de uma vez."""
+        answer = """Olá! 😊 Seja muito bem-vindo(a)! Fico feliz em ter você aqui.
 
-Com base nos documentos que tenho disponíveis, aqui estão as principais informações para o seu início:
+Sou o assistente de onboarding da empresa. Estou aqui para ajudar com qualquer dúvida sobre seus primeiros dias, benefícios, férias, horários e tudo mais que precisar.
 
-**Sistemas que você vai usar:**
-- **Slack** (comunicação interna, canais: #geral, #onboarding, #seutime)
-- **Google Workspace** (e-mail, calendário e documentos)
-- **PontoTel** (registro de ponto diário)
-- **PipeDrive** (CRM, se aplicável ao seu cargo)
-- **Notion** (documentação interna e wikis)
-- **Jira** (gestão de tarefas, se aplicável ao seu cargo)
-- **Wellhub** (benefício de academias)
-- **Flash** (cartão de alimentação e refeição)
-
-**Horário de Trabalho:**
-A jornada regular é de 8 horas diárias (44 horas semanais), de segunda a sexta-feira, com horário flexível entre 7h e 19h. Você deve cumprir 8 horas líquidas de trabalho com intervalo mínimo de 1 hora de almoço. O registro de ponto é obrigatório (inclusive em home office) e deve ser feito no sistema PontoTel até as 9h e ao final do expediente.
-
-**Treinamentos Obrigatórios (nos primeiros 15 dias):**
-Você precisa completar:
-1. Treinamento de Segurança da Informação (1h, plataforma EAD)
-2. Código de Conduta (leitura e termo de ciência)
-3. Apresentação da Cultura e Valores da Empresa (2h presencial ou Zoom)
-4. Treinamento dos sistemas que utilizará no dia a dia
-
-Todos os treinamentos são agendados pelo RH e você receberá os links por e-mail.
-
-**Auxílio Home Office:**
-Se você estiver em regime de home office, receberá um auxílio mensal de R$ 150,00 para despesas de internet e energia elétrica, pago junto com o salário, sem necessidade de comprovação.
-
-**Código de Conduta:**
-Espera-se que todos ajam com integridade, respeito, responsabilidade e transparência. O descumprimento pode resultar em advertências, suspensões ou demissão por justa causa.
-
-Se tiver qualquer dúvida ou precisar de mais informações, fique à vontade para perguntar! Estou aqui para ajudar.
-
-*Fontes: codigo_conduta.pdf, onboarding_geral.pdf, beneficios.pdf, politica_home_office.pdf*
-"""
-        return {"answer": answer.strip(), "source": "codigo_conduta.pdf, onboarding_geral.pdf, beneficios.pdf, politica_home_office.pdf"}
+Pode perguntar à vontade — estou aqui para ajudar! 🚀"""
+        return {"answer": answer.strip(), "source": ""}
 
     def ask(self, question: str) -> dict:
         """Executa o grafo completo e retorna a resposta."""
