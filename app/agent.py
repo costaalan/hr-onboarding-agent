@@ -12,6 +12,7 @@ Usa OpenRouter com DeepSeek V3 como LLM.
 import os
 import sys
 import json
+import re
 import urllib.request
 import urllib.error
 from pathlib import Path
@@ -38,6 +39,9 @@ DEEPSEEK_URL = "https://api.deepseek.com/chat/completions"
 
 # Top-K chunks para recuperar
 TOP_K = 5
+
+# Threshold de relevancia minima (distancia do ChromaDB — quanto menor, mais relevante)
+MIN_RELEVANCE_SCORE = 0.7
 
 
 class AgentState(TypedDict):
@@ -220,11 +224,16 @@ Pergunta: {question}"""
 
         if results["documents"] and results["documents"][0]:
             for i, doc in enumerate(results["documents"][0]):
+                distance = results["distances"][0][i] if results["distances"] else 1.0
+                # Filtra chunks com distance >= MIN_RELEVANCE_SCORE (menos relevantes)
+                if distance >= MIN_RELEVANCE_SCORE:
+                    print(f"  [FILTER] Chunk descartado (distance={distance:.4f} >= {MIN_RELEVANCE_SCORE})")
+                    continue
                 source = results["metadatas"][0][i].get("source", "desconhecido")
                 contexts.append({
                     "text": doc,
                     "source": source,
-                    "relevance": results["distances"][0][i] if results["distances"] else 0,
+                    "relevance": distance,
                 })
                 seen_sources.add(source)
 
@@ -269,6 +278,9 @@ Documentos de referencia (uso interno):
 Pergunta do usuario: {question}'''
 
         answer = call_llm(system, prompt, max_tokens=600, temperature=0.3)
+
+        # Filtro de PII: remove CPF, email, telefone do output
+        answer = self._sanitize_pii(answer)
         if not answer:
             # Fallback: responder com informacoes basicas baseadas nos chunks
             fallback_info = ""
@@ -321,8 +333,33 @@ Pode perguntar à vontade — estou aqui para ajudar! 🚀"""
 
         final_state = self.graph.invoke(initial_state)
 
+        # Filtro de PII aplicado a todas as saidas
+        answer = self._sanitize_pii(final_state.get("answer", ""))
+
         return {
             "question": question,
-            "answer": final_state.get("answer", ""),
+            "answer": answer,
             "source": final_state.get("source", ""),
         }
+
+    @staticmethod
+    def _sanitize_pii(text: str) -> str:
+        """Remove PII (CPF, email, telefone) do texto de saida."""
+        if not text:
+            return text
+
+        # CPF: 000.000.000-00 ou 00000000000
+        text = re.sub(r'\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b', '[CPF REMOVIDO]', text)
+
+        # Email: user@domain.com
+        text = re.sub(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b', '[EMAIL REMOVIDO]', text)
+
+        # Telefone: varios formatos brasileiros
+        # (XX) XXXXX-XXXX, (XX) XXXX-XXXX, XX XXXXX-XXXX, XX XXXX-XXXX, +55 XX ...
+        text = re.sub(
+            r'(?:\(\d{2}\)\s?|\+55\s?\(?\d{2}\)?\s?)?\d{4,5}-?\d{4}\b',
+            '[TELEFONE REMOVIDO]',
+            text,
+        )
+
+        return text
